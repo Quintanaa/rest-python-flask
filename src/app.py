@@ -1,5 +1,6 @@
 import os
-from flask import Flask, escape, request, jsonify
+from flask import Flask, escape, request, jsonify 
+from flask_cors import CORS
 from marshmallow import ValidationError
 from flask_pymongo import PyMongo
 from sqlalchemy import create_engine, text
@@ -11,9 +12,11 @@ import src.settings
 from src.secret.controllers.secret import secret_blueprint
 from src.auth.controllers.test_ficheros import test_error_blueprint
 from src.auth.controllers.test_db import db_errors_blueprint
+from src.auth.controllers.pokemon_api import pokemon_api_blueprint
 
 
 app = Flask(__name__)
+CORS(app)
 #PostgreSQL
 POSTGRE_URL = "postgresql+psycopg2://postgres:tu_contraseña@localhost:5432/flask_test"
 postgre_engine = create_engine(POSTGRE_URL)
@@ -58,6 +61,8 @@ app.register_blueprint(secret_blueprint, url_prefix=f'{prefix}/secret')
 app.register_blueprint(test_error_blueprint, url_prefix=f'{prefix}/file')
 
 app.register_blueprint(db_errors_blueprint, url_prefix=f'{prefix}/db')
+
+app.register_blueprint(pokemon_api_blueprint, url_prefix=f'{prefix}/pokemon')
 
 
 @app.route(f'{prefix}/ping', methods=['GET'])
