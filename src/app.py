@@ -1,14 +1,14 @@
 import os
 from flask import Flask, escape, request, jsonify 
-from flask_cors import CORS
 from marshmallow import ValidationError
-from flask_pymongo import PyMongo
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, MetaData, Table, Column, Integer, String
+from sqlalchemy.orm import sessionmaker, declarative_base
+from passlib.hash import bcrypt
+import jwt
+import datetime
 
 from src.auth.auth_exception import UserExistsException, UserNotFoundException, AccessDeniedException
 from src.auth.controllers.auth import auth_blueprint
-
-import src.settings
 from src.secret.controllers.secret import secret_blueprint
 from src.auth.controllers.test_ficheros import test_error_blueprint
 from src.auth.controllers.test_db import db_errors_blueprint
@@ -16,16 +16,24 @@ from src.auth.controllers.pokemon_api import pokemon_api_blueprint
 
 
 app = Flask(__name__)
-CORS(app)
 #PostgreSQL
-POSTGRE_URL = "postgresql+psycopg2://postgres:tu_contraseña@localhost:5432/flask_test"
+POSTGRE_URL = "postgresql+psycopg2://postgres:425d@localhost:5432/flask_test"
 postgre_engine = create_engine(POSTGRE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=postgre_engine)
+Base = declarative_base()
 
-app.config["MONGO_URI"] = os.environ.get('MONGO_URL', 'mongodb://localhost:27017/db')
+#JWT secret key
+JWT_SECRET_KEY = "contraseña"
 
-print(os.environ.get('MONGO_URL'))
+#User model
+class User(Base):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    email = Column(String, unique=True, index=True)
+    password = Column(String)
 
-mongo = PyMongo(app)
+Base.metadata.create_all(bind=postgre_engine)
 
 # set default version to v1
 version = os.environ.get('API_VERSION', 'v1')
@@ -81,3 +89,38 @@ def db_check():
             return jsonify({"message": "Database is reachable", "result": [row[0] for row in result]})
     except Exception as e:
         return jsonify({"error": "Database connection error", "details": str(e)}), 500
+    
+@app.route(f'{prefix}/auth/register', methods=['POST'])
+def register_user():
+    data = request.get_json()
+    db = SessionLocal()
+
+    if db.query(User).filter_by(username=data['username']).first():
+        return jsonify({"error": "User already exists"}), 400
+
+    hashed_password = bcrypt.hash(password)
+
+    new_user = User(username=data["username"], email=data["email"], password=hashed_password)
+
+    db.add(new_user)
+    db.commit()
+    db.close()
+    return jsonify({"message": "User created successfully", "user_id": new_user.id}), 201
+    
+@app.route(f'{prefix}/auth/login', methods=['POST'])
+def login_user():
+    data = request.get_json()
+    db = SessionLocal()
+
+    user = db.query(User).filter_by(username=data['username']).first()
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if not bcrypt.verify(data['password'], user.password):
+        return jsonify({"error": "Invalid password"}), 401
+
+    token = jwt.encode({"user_id": user.id, "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)}, JWT_SECRET_KEY, algorithm="HS256")
+
+    db.close()
+    return jsonify({"token": token}), 200
