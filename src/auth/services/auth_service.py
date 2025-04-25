@@ -1,45 +1,47 @@
-from bson.objectid import ObjectId
+from sqlalchemy.orm import Session
 from src.auth.auth_exception import UserNotFoundException
+from src.auth.models.user import User  # Asegúrate de que el modelo exista
+
+import hashlib
 
 
 class UserService:
-    def create_user(self, user_data, show_password=False):
-        from src.app import mongo
-        user_data["password"] = self._encrypt_password(user_data["password"])
-        inserted = mongo.db.user.insert_one(user_data)
-        filtered_fields = {'_id': False }
-        if not show_password:
-            filtered_fields.update({"password": False})
+    def __init__(self, db: Session):
+        self.db = db
 
-        user = mongo.db.user.find_one(
-            {"_id": ObjectId(inserted.inserted_id)},
-            filtered_fields
+    def create_user(self, user_data: dict, show_password=False):
+        hashed_password = self._encrypt_password(user_data["password"])
+        new_user = User(
+            username=user_data["username"],
+            password=hashed_password,
+            email=user_data.get("email")  # o los campos que uses
         )
-        return user
+        self.db.add(new_user)
+        self.db.commit()
+        self.db.refresh(new_user)
 
-    def get_user_by(self, field, value, show_password=False):
-        from src.app import mongo
-        filtered_fields = {'_id': False }
         if not show_password:
-            filtered_fields.update({"password": False})
-        user = mongo.db.user.find_one({field: value}, filtered_fields)
+            new_user.password = None
+        return new_user
+
+    def get_user_by(self, field: str, value: str, show_password=False):
+        user = self.db.query(User).filter(getattr(User, field) == value).first()
         if user is None:
             raise UserNotFoundException("User not found")
+        if not show_password:
+            user.password = None
         return user
 
-    @staticmethod
-    def is_valid_user(username, password):
-        from src.app import mongo
-        user = mongo.db.user.find_one({"username": username})
-        return UserService.compare_password(user["password"], password)
+    def is_valid_user(self, username, password):
+        user = self.db.query(User).filter_by(username=username).first()
+        if not user:
+            return False
+        return self.compare_password(user.password, password)
 
     @staticmethod
     def _encrypt_password(password):
-        import hashlib
         return hashlib.md5(password.encode('utf-8')).hexdigest()
 
     @staticmethod
     def compare_password(hashed, plain):
-        import hashlib
         return hashed == hashlib.md5(plain.encode('utf-8')).hexdigest()
-

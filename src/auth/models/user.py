@@ -1,10 +1,12 @@
-import datetime
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
 
-from mongoengine import *
+Base = declarative_base()
 
+class User(Base):
+    __tablename__ = 'users'
 
-class User(Document):
-    id = StringField(max_length=36, required=True)
-    created = DateTimeField(default=datetime.datetime.utcnow)
-    modified = DateTimeField(default=datetime.datetime.utcnow)
-    active = BooleanField(default=True)
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    password = Column(String)
+    email = Column(String, unique=True, nullable=True)

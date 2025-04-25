@@ -1,31 +1,31 @@
 services:
+  api:
+    build:
+      context: .  # Ubicación del Dockerfile
+    container_name: python-api
+    ports:
+      - "5000:5000"  # cambia si usás otro puerto
+    environment:
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./api:/app  # monta tu código en tiempo real
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - mysqldb  # si la API también habla con MySQL
+
   mysqldb:
     image: mysql:8.0.2
-    restart: unless-stopped
-    env_file: ./.env
+    container_name: mysql-api
     environment:
-      - MYSQL_ROOT_PASSWORD=$MYSQLDB_ROOT_PASSWORD
-      - MYSQL_DATABASE=$MYSQLDB_DATABASE
+      - MYSQL_ROOT_PASSWORD=123456
+      - MYSQL_DATABASE=flask
     ports:
-      - $MYSQLDB_LOCAL_PORT:$MYSQLDB_DOCKER_PORT
+      - "3608:3306"  # distinto del otro MySQL si corren en paralelo
     volumes:
-      - db:/var/lib/mysql
+      - db_api:/var/lib/mysql
       - ./sql/data.sql:/docker-entrypoint-initdb.d/data.sql
-    #command: --default-authentication-plugin=mysql_native_password --skip-ssl
-  mysqldb_prod:
-    image: mysql:8.0.2
-    restart: unless-stopped
-    env_file: ./.env
-    environment:
-      - MYSQL_ROOT_PASSWORD=$MYSQLDB_ROOT_PASSWORD_PROD
-      - MYSQL_DATABASE=$MYSQLDB_DATABASE_PROD
-    ports:
-      - $MYSQLDB_LOCAL_PORT_PROD:$MYSQLDB_DOCKER_PORT_PROD
-    volumes:
-      - db_prod:/var/lib/mysql
-      - ./sql/data_prod.sql:/docker-entrypoint-initdb.d/data_prod.sql
-    #command: --default-authentication-plugin=mysql_native_password --skip-ssl
+
 volumes:
-  db:
-  db_prod:
-  
+  db_api:
