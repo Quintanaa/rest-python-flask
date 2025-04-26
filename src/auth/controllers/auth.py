@@ -23,7 +23,7 @@ def login():
             field="username", value=user_data["username"], show_password=True
         )
     except UserNotFoundException as e:
-        raise AccessDeniedException({"error": "User not found or wrong password"})
+        raise AccessDeniedException({"error": "Usuario no encontrado o contraseña incorrecta"})
 
     is_valid = UserService.compare_password(
         hashed=user["password"],
@@ -31,7 +31,7 @@ def login():
     )
 
     if not is_valid:
-        raise AccessDeniedException({"error": "User not found or wrong password"})
+        raise AccessDeniedException({"error": "Usuario no encontrado o contraseña incorrecta"})
 
     del user["password"]
 

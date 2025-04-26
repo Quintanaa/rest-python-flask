@@ -18,19 +18,19 @@ def get_pokemon():
 
     #Simulamos los diferentes tipos de errores
     if error_type == 'unauthorized':
-        return jsonify({"error": "Unauthorized access", "details": "You are not authorized to access this resource"}), 401
+        return jsonify({"error": "Acceso no autorizado", "details": "No estás autorizado para acceder a este recurso"}), 401
     elif error_type == 'forbidden':
-        return jsonify({"error": "Forbidden access", "details": "You do not have permission to access this resource"}), 403
+        return jsonify({"error": "Acceso prohibido", "details": "No tienes permiso para acceder a este recurso"}), 403
     elif error_type == 'not_found':
-        return jsonify({"error": "Pokemon not found", "details": f"Pokemon '{pokemon_name}' not found"}), 404
+        return jsonify({"error": "Pokemon no encontrado", "details": f"Pokemon '{pokemon_name}' no encontrado"}), 404
     elif error_type == 'connection':
-        return jsonify({"error": "Connection error", "details": "Failed to connect to the Pokemon API"}), 503
+        return jsonify({"error": "Error de conexión", "details": "No se pudo conectar a la API de Pokemon"}), 503
     elif error_type == 'timeout':
-        return jsonify({"error": "Request timeout", "details": "The request to the Pokemon API timed out"}), 504
+        return jsonify({"error": "Tiempo de espera agotado", "details": "La solicitud a la API de Pokemon agotó el tiempo de espera"}), 504
     elif error_type == 'bad_request':
-        return jsonify({"error": "Bad request"}), 400
+        return jsonify({"error": "Solicitud incorrecta"}), 400
     elif error_type == 'internal_server_error':
-        return jsonify({"error": "Internal server error"}), 500
+        return jsonify({"error": "Error interno del servidor"}), 500
 
     try:
         #Respuesta de la API de Pokemon
@@ -50,20 +50,18 @@ def get_pokemon():
 
         return jsonify({"pokemon":simplified_data})
     
-    except HTTPError as http_err:
+    except HTTPError:
         if response.status_code == 401:
-            return jsonify({"error": "Unauthorized access", "details": str(http_err)}), 401
+            return jsonify({"error": "Acceso no autorizado", "details": "No estás autorizado para acceder a este recurso"}), 401
         elif response.status_code == 403:
-            return jsonify({"error": "Forbidden access", "details": str(http_err)}), 403
+            return jsonify({"error": "Acceso prohibido", "details": "No tienes permiso para acceder a este recurso"}), 403
         elif response.status_code == 404:
-            return jsonify({"error": "Pokemon not found", "details": str(http_err)}), 404
+            return jsonify({"error": "Pokemon no encontrado", "details": f"Pokemon '{pokemon_name}' no encontrado"}), 404
         else:
-            return jsonify({"error": "HTTP error occurred", "details": str(http_err)}), 500
-    except Timeout as timeout_err:
-        return jsonify({"error": "Request timeout", "details": str(timeout_err)}), 504
-    except ConnectionError as conn_err:
-        return jsonify({"error": "Connection error", "details": str(conn_err)}), 503
-    except Exception as e:
-        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
-    
-    
+            return jsonify({"error": "Error interno del servidor"}), 500
+    except Timeout:
+        return jsonify({"error": "Tiempo de espera agotado", "details": "La solicitud a la API de Pokemon agotó el tiempo de espera"}), 504
+    except ConnectionError:
+        return jsonify({"error": "Error de conexión", "details": "No se pudo conectar a la API de Pokemon"}), 503
+    except Exception:
+        return jsonify({"error": "Error inesperado"}), 500

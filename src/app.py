@@ -15,7 +15,7 @@ from src.auth.controllers.pokemon_api import pokemon_api_blueprint
 
 app = Flask(__name__)
 #MYSQL connection
-MYSQL_URL = "mysql+pymysql://root:123456@localhost:3607/flask"
+MYSQL_URL = os.environ.get("MYSQL_URL", "mysql+pymysql://root:123456@localhost:3306/flask")
 mysql_engine = create_engine(MYSQL_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=mysql_engine)
 
@@ -68,8 +68,8 @@ def ping():
 @app.route(f'{prefix}/db-check', methods=['GET'])
 def db_check():
     try:
-        with postgre_engine.connect() as connection:
-            result = connection.execute(text("SELECT datname FROM pg_database;"))
-            return jsonify({"message": "Database is reachable", "result": [row[0] for row in result]})
+        with mysql_engine.connect() as connection:
+            result = connection.execute(text("SHOW DATABASES;"))
+            return jsonify({"message": "La base de datos es accesible", "result": [row[0] for row in result]})
     except Exception as e:
-        return jsonify({"error": "Database connection error", "details": str(e)}), 500
+        return jsonify({"error": "Error de conexión a la base de datos", "details": str(e)}), 500

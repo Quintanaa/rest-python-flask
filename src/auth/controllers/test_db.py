@@ -20,9 +20,9 @@ def db_connection_error():
             # Si la conexión es exitosa, ejecutamos una consulta simple
             return jsonify({"message": "Database connection successful"})
     except OperationalError as e:
-        return jsonify({"error": "Database connection error", "details": str(e)}), 500
+        return jsonify({"error": "Error de conexión a la base de datos"}), 500
     except Exception as e:
-        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+        return jsonify({"error": "Ocurrió un error inesperado", "details": str(e)}), 500
     
 @db_errors_blueprint.route('/db-query-error', methods=['GET'])
 def db_query_error():
@@ -37,9 +37,9 @@ def db_query_error():
             # Si la consulta es exitosa, significa que no hubo error de clave única
             return jsonify({"message": "Database operation successful"})
     except OperationalError as e:
-        return jsonify({"error": "Database operation error (no existe la tabla)", "details": str(e)}), 500
+        return jsonify({"error": "Error en operación de base de datos (no existe la tabla)"}), 500
     except Exception as e:
-        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+        return jsonify({"error": "Ocurrió un error inesperado", "details": str(e)}), 500
     
 @db_errors_blueprint.route('/db-unique-key-error', methods=['GET'])
 def db_unique_key_error():
@@ -63,6 +63,6 @@ def db_unique_key_error():
             # Si la consulta es exitosa, significa que no hubo error de clave única
             return jsonify({"message": "Database operation successful"})
     except IntegrityError as e:
-        return jsonify({"error": "Database operation error (clave única)", "details": str(e)}), 500
+        return jsonify({"error": "Error en operación de base de datos (clave única)"}), 500
     except Exception as e:
-        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+        return jsonify({"error": "Ocurrió un error inesperado", "details": str(e)}), 500

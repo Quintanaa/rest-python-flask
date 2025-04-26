@@ -27,7 +27,7 @@ class UserService:
     def get_user_by(self, field: str, value: str, show_password=False):
         user = self.db.query(User).filter(getattr(User, field) == value).first()
         if user is None:
-            raise UserNotFoundException("User not found")
+            raise UserNotFoundException("Usuario no encontrado")
         if not show_password:
             user.password = None
         return user
